@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Creative To-Do List</title>
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            /* Add a stunning abstract background image with overlay gradient */
+            background: 
+                linear-gradient(120deg, rgba(113, 126, 129, 0.86) 0%, rgba(254,214,227,0.76) 100%), 
+                url('https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/9cb404bd-3633-4d19-afec-2e84646510ad.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .todo-container {
+            background: rgba(255,255,255,0.95);
+            max-width: 430px;
+            margin: 60px auto;
+            padding: 38px 32px 28px 32px;
+            border-radius: 18px;
+            box-shadow: 0 8px 36px rgba(70, 72, 140, 0.14), 0 2px 10px rgba(20,20,90,.09);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            text-align: center;
+            color: #52b7fa;
+            font-size: 2.4rem;
+            font-family: 'Poppins', Arial, sans-serif;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 24px;
+        }
+        #task-input {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 1.05rem;
+            border: 2px solid #e3e5fa;
+            border-radius: 9px 0 0 9px;
+            outline: none;
+            background: #f7faff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #task-input:focus {
+            border-color: #52b7fa;
+            box-shadow: 0 2px 6px rgba(82,183,250,0.11);
+        }
+        #add-btn {
+            padding: 0 26px;
+            background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
+            color: #fff;
+            font-size: 1.08rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 0 9px 9px 0;
+            cursor: pointer;
+            box-shadow: 0 2px 7px rgba(51,187,184,.13);
+            transition: background 0.2s, transform 0.2s;
+        }
+        #add-btn:hover, #add-btn:focus {
+            background: linear-gradient(135deg, #3bb2b8 0%, #42e695 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+        #todo-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 13px 13px 8px;
+            margin-bottom: 12px;
+            background: linear-gradient(100deg, #eefaff 0%, #f6fafd 100%);
+            border-radius: 11px;
+            box-shadow: 0 1.5px 6px rgba(130, 120, 255, .07);
+            position: relative;
+            font-size: 1.08rem;
+            animation: fadeIn 0.55s cubic-bezier(.46,.03,.52,1.15);
+        }
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(25px);}
+            to {opacity:1; transform: translateY(0);}
+        }
+        .todo-item.completed span {
+            text-decoration: line-through;
+            color: #87bba2;
+            opacity: 0.68;
+            transition: color 0.22s, opacity 0.22s;
+        }
+        .complete-btn {
+            background: none;
+            border: none;
+            outline: none;
+            padding: 3px 9px 3px 3px;
+            margin-right: 12px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.17s, transform 0.17s;
+        }
+        .complete-btn img {
+            width: 25px;
+            height: 25px;
+            display: block;
+        }
+        .complete-btn:hover {
+            background: #dbfff1;
+            transform: scale(1.09) rotate(-10deg);
+        }
+        .remove-btn {
+            background: none;
+            border: none;
+            outline: none;
+            padding: 2px 8px 2px 8px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.17s, transform 0.17s;
+        }
+        .remove-btn img {
+            width: 22px;
+            height: 22px;
+            display: block;
+        }
+        .remove-btn:hover {
+            background: #ffeaea;
+            transform: scale(1.10) rotate(8deg);
+        }
+        .todo-item.completed {
+            background: linear-gradient(100deg, #e6fcf7 0%, #f0f6fa 100%);
+            box-shadow: 0 2.5px 13px rgba(79,220,175,0.07);
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-container">
+        <h1>To-Do List</h1>
+        <div class="input-group">
+            <input type="text" id="task-input" placeholder="Add a new task..." />
+            <button id="add-btn">Add</button>
+        </div>
+        <ul id="todo-list"></ul>
+    </div>
+    <script>
+        const addBtn = document.getElementById("add-btn");
+        const input = document.getElementById("task-input");
+        const todoList = document.getElementById("todo-list");
+        // Use your own icon image or the generated icons provided above
+        const iconCheck = 'https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/2eb6feb3-dda7-4b0e-87dc-7acc277839db.png'; // Change to direct checkmark icon PNG if needed
+        const iconTrash = 'https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/2eb6feb3-dda7-4b0e-87dc-7acc277839db.png'; // Change to direct trash bin icon PNG if needed
+
+        function createTodoItem(text) {
+            const li = document.createElement("li");
+            li.classList.add("todo-item");
+
+            const span = document.createElement("span");
+            span.textContent = text;
+
+            // Complete icon button (use only the first icon in the sprite for demo)
+            const completeBtn = document.createElement("button");
+            completeBtn.classList.add("complete-btn");
+            completeBtn.title = "Mark as complete";
+            const checkIcon = document.createElement("img");
+            checkIcon.src = iconCheck;
+            checkIcon.alt = "Complete";
+            completeBtn.appendChild(checkIcon);
+            completeBtn.addEventListener("click", function() {
+                li.classList.toggle("completed");
+            });
+
+            // Remove icon button (use the second icon in the sprite for demo)
+            const removeBtn = document.createElement("button");
+            removeBtn.classList.add("remove-btn");
+            removeBtn.title = "Delete task";
+            const trashIcon = document.createElement("img");
+            trashIcon.src = iconTrash;
+            trashIcon.alt = "Remove";
+            removeBtn.appendChild(trashIcon);
+            removeBtn.addEventListener("click", function() {
+                todoList.removeChild(li);
+            });
+
+            li.appendChild(completeBtn);
+            li.appendChild(span);
+            li.appendChild(removeBtn);
+
+            return li;
+        }
+
+        function addTask() {
+            const text = input.value.trim();
+            if (text === "") return;
+            const todoItem = createTodoItem(text);
+            todoList.appendChild(todoItem);
+            input.value = "";
+            input.focus();
+        }
+
+        addBtn.addEventListener("click", addTask);
+        input.addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html>
